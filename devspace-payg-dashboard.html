@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DevSpace — Пространство k8s-campaign (PayG)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --accent: #12B0A0;
+    --accent-hover: #0E9484;
+    --accent-pressed: #0B7F72;
+    --accent-soft: #E6F6F4;
+    --text: #3F3F46;
+    --text-secondary: #71717A;
+    --border: #D0D1D3;
+    --line: #E4E4E7;
+    --bg-alt: #F7F9FB;
+    --cloudsy: #FFFAED;
+    --highlight: #FEF6D9;
+    --white: #FFFFFF;
+    --dark: #152949;
+    --bg-app: #FAFAFA;
+    --success: #58CB24;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-app);
+    color: var(--text);
+    font-size: 12px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .app { display: grid; grid-template-columns: 238px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #FFFFFF;
+    border-right: 1px solid var(--border);
+    padding: 20px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .brand {
+    font-weight: 500; font-size: 15px;
+    padding: 4px 12px 16px;
+    display: flex; align-items: center; gap: 8px; color: var(--text);
+  }
+  .brand-dot {
+    width: 24px; height: 24px; background: var(--accent);
+    border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 600;
+  }
+  .nav-item {
+    padding: 8px 12px; display: flex; align-items: center; gap: 10px;
+    color: var(--text-secondary); border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 400; user-select: none; line-height: 20px;
+  }
+  .nav-item:hover { background: var(--bg-alt); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-pressed); }
+  .nav-item svg { flex-shrink: 0; }
+  .nav-section-label {
+    font-size: 11px; font-weight: 500; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 12px 8px;
+  }
+
+  /* Main + header */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .header {
+    height: 48px; background: #FFFFFF; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+  }
+  .header-title { font-size: 12px; color: var(--text-secondary); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-icon {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--bg-alt);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-secondary);
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #12B0A0, #0E9484);
+    color: #fff; display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 12px;
+  }
+
+  /* Content */
+  .content { padding: 24px; width: 100%; }
+  .breadcrumbs {
+    color: var(--text-secondary); font-size: 12px; line-height: 16px;
+    margin-bottom: 24px; display: flex; align-items: center; gap: 6px;
+  }
+  .breadcrumbs a { color: var(--text-secondary); text-decoration: none; }
+  .breadcrumbs a:hover { color: var(--text); }
+  .breadcrumbs .sep { color: var(--border); }
+  .breadcrumbs .current { color: var(--text); }
+
+  /* Dashboard layout: info card (left) + cost panel (right edge) */
+  .layout { display: flex; gap: 48px; justify-content: space-between; align-items: flex-start; }
+
+  /* ---------- Info card ---------- */
+  .info-card { width: 428px; flex-shrink: 0; display: flex; flex-direction: column; }
+
+  .info-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px;
+  }
+  .info-title {
+    font-size: 26px; line-height: 34px; font-weight: 500; margin: 0; color: var(--text);
+  }
+
+  /* Access blocks row (Email/Пароль card + Файлы доступа) */
+  .access-row { display: flex; gap: 24px; align-items: stretch; padding: 16px 0; }
+  .access-card {
+    background: var(--white);
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.08), 0 2px 4px rgba(44,43,42,0.1);
+    padding: 16px 16px 8px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .access-user-icon {
+    width: 42px; height: 42px; background: var(--cloudsy); border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: #C79A2E;
+  }
+  .access-fields { display: flex; flex-direction: column; gap: 4px; }
+  .access-line { display: flex; gap: 16px; align-items: center; height: 20px; }
+  .access-label { font-size: 12px; line-height: 16px; color: var(--text); width: 52px; }
+  .access-value { font-size: 12px; line-height: 16px; color: var(--text); min-width: 120px; }
+  .access-copy {
+    color: var(--text-secondary); cursor: pointer; display: inline-flex;
+    align-items: center; transition: color 0.15s;
+  }
+  .access-copy:hover { color: var(--accent); }
+  .access-all-users {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-top: 4px; cursor: pointer;
+  }
+  .access-all-users span { color: var(--accent); font-weight: 600; font-size: 14px; line-height: 20px; }
+  .access-all-users:hover span { color: var(--accent-hover); }
+
+  .files-card {
+    background: var(--white); flex: 1;
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.08), 0 2px 4px rgba(44,43,42,0.1);
+    padding: 16px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+  }
+  .files-card:hover { background: var(--bg-alt); }
+  .files-icon {
+    width: 42px; height: 42px; background: var(--bg-alt); border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: var(--accent);
+  }
+  .files-label { font-size: 12px; line-height: 16px; color: var(--text); }
+
+  /* Table rows (Статус, Регион, потребление) */
+  .info-row {
+    display: flex; align-items: center; padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .info-row.line-soft { border-bottom: 0.5px solid var(--line); }
+  .info-row-label {
+    width: 156px; padding-right: 16px; font-size: 12px; line-height: 20px; color: var(--text);
+    flex-shrink: 0;
+  }
+  .info-row-value {
+    flex: 1; font-size: 12px; line-height: 20px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+  .status-wallet { color: var(--text-secondary); display: inline-flex; margin-left: 4px; cursor: pointer; }
+  .status-wallet:hover { color: var(--accent); }
+
+  /* Consumption block with highlighted vCPU rows */
+  .consumption {
+    padding: 16px 0; border-bottom: 0.5px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .consumption-title {
+    font-size: 12px; font-weight: 600; line-height: 20px; color: var(--text);
+    margin-bottom: 8px;
+  }
+  .consumption-row {
+    display: flex; align-items: center; height: 24px; font-size: 12px; line-height: 20px;
+  }
+  .consumption-row .c-label { width: 171px; color: var(--text); }
+  .consumption-row .c-value { flex: 1; color: var(--text); }
+  .consumption-row.highlight {
+    background: var(--highlight);
+    margin: 0 -8px; padding: 0 8px; height: 26px;
+  }
+
+  /* Apps management */
+  .apps-block { padding: 16px 0; }
+  .apps-header {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer;
+  }
+  .apps-header span { color: var(--accent); font-weight: 600; font-size: 14px; line-height: 20px; }
+  .apps-header:hover span { color: var(--accent-hover); }
+  .apps-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-top: 8px;
+  }
+  .app-item { display: flex; align-items: center; gap: 12px; height: 33px; }
+  .app-item .app-icon {
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .app-item .app-name { font-size: 16px; font-weight: 600; line-height: 24px; color: var(--text); }
+
+  /* Buttons row */
+  .info-buttons {
+    display: flex; gap: 16px; align-items: center; padding-top: 24px;
+    border-top: 1px solid var(--line); margin-top: 16px;
+  }
+  .btn {
+    height: 36px; padding: 4px 20px; border-radius: 24px; font-family: inherit;
+    font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px; transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn-secondary { background: var(--white); color: var(--text); border-color: var(--line); padding: 4px 16px; }
+  .btn-secondary:hover { background: var(--bg-alt); }
+  .btn-primary { background: var(--accent); color: var(--white); flex: 1; }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  /* ---------- Cost panel (right, floating) ---------- */
+  .cost-panel {
+    background: var(--white); width: 367px; flex-shrink: 0;
+    box-shadow: -2px 2px 16px rgba(0,0,0,0.15);
+    padding: 40px; position: sticky; top: 24px;
+    display: flex; flex-direction: column;
+  }
+  .cost-header { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+  .cost-title { font-size: 18px; line-height: 24px; font-weight: 500; margin: 0; color: var(--text); }
+
+  .cost-table { display: flex; flex-direction: column; }
+  .cost-row {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 40px; padding: 10px 0; border-bottom: 0.5px solid var(--border);
+    font-size: 12px; line-height: 20px;
+  }
+  .cost-row .cost-label { color: var(--text); display: flex; align-items: center; gap: 4px; }
+  .cost-row .cost-value { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cost-row.highlight-price {
+    background: var(--highlight); margin: 0 -8px; padding: 10px 8px; height: auto;
+  }
+  .cost-row.total {
+    border-bottom: none; border-top: 1px solid var(--accent); padding-top: 12px; margin-top: 4px;
+  }
+  .cost-row.total .cost-label { font-size: 12px; }
+  .cost-row.total .cost-value { font-size: 16px; font-weight: 600; line-height: 24px; }
+
+  /* Period tabs */
+  .period-tabs { display: flex; gap: 2px; margin-top: 16px; }
+  .period-tab {
+    flex: 1; height: 40px; display: flex; align-items: center; justify-content: center;
+    background: var(--bg-alt); color: var(--text); font-size: 12px; line-height: 20px;
+    cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s;
+  }
+  .period-tab:hover:not(.active) { background: #EEF2F6; }
+  .period-tab.active { background: var(--accent); color: var(--white); }
+
+  /* How-cost link */
+  .cost-link-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 20px;
+    padding-top: 4px;
+  }
+  .cost-link-row a {
+    color: var(--text); text-decoration: underline; text-underline-offset: 2px;
+    font-size: 12px; line-height: 20px; cursor: pointer;
+  }
+  .cost-link-row a:hover { color: var(--accent); }
+
+  /* Info icon + tooltip */
+  .info-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); cursor: help; position: relative; flex-shrink: 0;
+  }
+  .info-icon:hover { color: var(--accent); }
+  .tooltip {
+    position: absolute; z-index: 30; background: var(--dark); color: #F9FAFB;
+    padding: 10px 12px; border-radius: 6px; font-size: 12px; line-height: 16px;
+    width: 240px; box-shadow: 0 12px 24px rgba(16, 24, 40, 0.15);
+    pointer-events: auto; opacity: 0; transition: opacity 0.15s, transform 0.15s;
+    visibility: hidden; font-weight: 400;
+  }
+  .tooltip.show { opacity: 1; visibility: visible; }
+  .tooltip.top { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(-4px); }
+  .tooltip.top.show { transform: translateX(-50%) translateY(0); }
+  .tooltip.top::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--dark);
+  }
+  .tooltip a { color: #6CE9DA; text-decoration: underline; text-underline-offset: 2px; }
+  .tooltip strong { color: #fff; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .layout { flex-direction: column; }
+    .cost-panel { position: static; width: 428px; max-width: 100%; }
+  }
+  @media (max-width: 720px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .content { padding: 16px; }
+    .info-card, .cost-panel { width: 100%; }
+    .access-row { flex-direction: column; }
+  }
+
+  .demo-hint {
+    position: fixed; bottom: 16px; right: 16px; background: var(--dark); color: #F9FAFB;
+    padding: 10px 14px; border-radius: 6px; font-size: 12px; line-height: 16px;
+    box-shadow: 0 12px 24px rgba(16, 24, 40, 0.15); max-width: 280px; z-index: 100;
+  }
+  .demo-hint b { color: #6CE9DA; }
+  .demo-hint-close { display: inline-block; margin-left: 8px; cursor: pointer; color: #98A2B3; }
+  .demo-hint-close:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-dot">D</span>DevSpace</div>
+    <div class="nav-section-label">Мои сервисы</div>
+    <div class="nav-item active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      DevSpace
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14a9 3 0 0 0 18 0V5"></path><path d="M3 12a9 3 0 0 0 18 0"></path></svg>
+      Базы данных
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+      Хранилище S3
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+      Kubernetes
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+      Почта
+    </div>
+    <div class="nav-section-label">Аккаунт</div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+      Биллинг
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      Настройки
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="header">
+      <div class="header-title">Пространство «k8s-campaign»</div>
+      <div class="header-right">
+        <div class="header-icon" title="Уведомления">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </div>
+        <div class="avatar">СМ</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <nav class="breadcrumbs">
+        <a href="#">Все сервисы</a>
+        <span class="sep">/</span>
+        <a href="#">DevSpace</a>
+        <span class="sep">/</span>
+        <span class="current">k8s-campaign</span>
+      </nav>
+
+      <div class="layout">
+        <!-- LEFT: info card -->
+        <section class="info-card">
+          <div class="info-header">
+            <h1 class="info-title">k8s-campaign</h1>
+          </div>
+
+          <!-- Access row -->
+          <div class="access-row">
+            <div class="access-card">
+              <div class="access-user-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <div class="access-fields">
+                <div class="access-line">
+                  <span class="access-label">Email</span>
+                  <span class="access-value">niap@manzanagroup.ru</span>
+                  <span class="access-copy" title="Копировать" onclick="copyText('niap@manzanagroup.ru')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  </span>
+                </div>
+                <div class="access-line">
+                  <span class="access-label">Пароль</span>
+                  <span class="access-value">••••••••</span>
+                  <span class="access-copy" title="Копировать" onclick="copyText('пароль')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  </span>
+                </div>
+                <div class="access-all-users">
+                  <span>Все пользователи</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12B0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="files-card">
+              <div class="files-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              </div>
+              <div class="files-label">Файлы<br>доступа</div>
+            </div>
+          </div>
+
+          <!-- Статус -->
+          <div class="info-row">
+            <div class="info-row-label">Статус</div>
+            <div class="info-row-value">
+              <span class="status-dot"></span>
+              Тест до 30.09.26
+              <span class="status-wallet" title="Перейти в коммерческий режим">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Регион -->
+          <div class="info-row">
+            <div class="info-row-label">Регион</div>
+            <div class="info-row-value">Kazakhstan, Almaty 2</div>
+          </div>
+
+          <!-- Текущее потребление -->
+          <div class="consumption">
+            <div class="consumption-title">Текущее потребление</div>
+            <div class="consumption-row">
+              <span class="c-label">vCPU</span>
+              <span class="c-value">28</span>
+            </div>
+            <div class="consumption-row">
+              <span class="c-label">vCPU гарант.</span>
+              <span class="c-value">6.4</span>
+            </div>
+            <div class="consumption-row">
+              <span class="c-label">RAM</span>
+              <span class="c-value">69 ГБ</span>
+            </div>
+            <div class="consumption-row">
+              <span class="c-label">Хранилище</span>
+              <span class="c-value">256 ГБ</span>
+            </div>
+            <div class="consumption-row">
+              <span class="c-label">Внешний IP</span>
+              <span class="c-value">1</span>
+            </div>
+          </div>
+
+          <!-- Управление приложениями -->
+          <div class="apps-block">
+            <div class="apps-header">
+              <span>Управление приложениями</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12B0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+            </div>
+            <div class="apps-grid">
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#326CE5"><path d="M11.996 2a1.6 1.6 0 0 0-.62.14L4.13 5.6a1.61 1.61 0 0 0-.87 1.08L1.47 14.5a1.6 1.6 0 0 0 .31 1.35l5.02 6.24a1.6 1.6 0 0 0 1.25.6h8.03a1.6 1.6 0 0 0 1.25-.6l5.02-6.24a1.6 1.6 0 0 0 .3-1.35l-1.78-7.82a1.61 1.61 0 0 0-.87-1.08L12.06 2.14a1.6 1.6 0 0 0-.06-.02A1.6 1.6 0 0 0 11.996 2Zm.004 3.03.14.01 4.86 2.34.02 5.4-3.66 2.94h-2.72L7.98 12.78l.02-5.4 4-1.93Zm0 3.36-2.32 1.87.86 2.9h2.92l.86-2.9L12 8.39Z"/></svg></span>
+                <span class="app-name">Kubernetes</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="3" height="16" rx="1" fill="#FFCC01"/><rect x="8" y="9" width="3" height="11" rx="1" fill="#FFCC01"/><rect x="13" y="6" width="3" height="14" rx="1" fill="#FFCC01"/><rect x="18" y="11" width="3" height="9" rx="1" fill="#FFCC01"/></svg></span>
+                <span class="app-name">ClickHouse</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M2 17c3-1 4-3 6-6 1.5-2.3 3-4 6-4 2.5 0 4 1 5 2-3 0-4 1.5-5.5 3.5C18 15 20 16 21.5 15c-.5 2-2 3-4 3-2.5 0-3.5-1.5-5-3.5C11 12.5 9.5 13.5 8 15.5 6.8 17.1 5 18 2 17Z" fill="#00618A"/><circle cx="6.5" cy="8.5" r="1" fill="#00618A"/></svg></span>
+                <span class="app-name">MySQL</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#231F20"><circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="12" r="2.2"/><path d="M8.6 7.1 15.4 11m0 2-6.8 3.9" stroke="#231F20" stroke-width="1.4"/></svg></span>
+                <span class="app-name">Kafka</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#336791"><path d="M12 2C7 2 4 4 4 8c0 3 .3 7 1 10 .4 1.8 1.4 3 2.8 3 1 0 1.6-.6 1.7-2 .1-1.2.2-2 .5-2 .4 0 .6.6.9 1.4.4 1 1 1.8 2.1 1.8 2.4 0 3.5-2 4-4.4.4-2 .6-4.4.6-6C18 4 16.5 2 12 2Zm3 5.5a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm-6 .2a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4Z"/></svg></span>
+                <span class="app-name">PostgreSQL</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#DC382D"><path d="M12 3 3 7l9 4 9-4-9-4Zm0 6.5L3 5.5v3L12 12l9-3.5v-3L12 9.5ZM3 12.5v3L12 19l9-3.5v-3L12 16 3 12.5Z"/></svg></span>
+                <span class="app-name">Redis</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="9" rx="7" ry="4" fill="#4FA1C6"/><path d="M5 9v6c0 2.2 3.1 4 7 4s7-1.8 7-4V9" stroke="#4FA1C6" stroke-width="1.6" fill="none"/><circle cx="9.5" cy="8.5" r="1" fill="#fff"/><circle cx="14.5" cy="8.5" r="1" fill="#fff"/></svg></span>
+                <span class="app-name">FerritDB</span>
+              </div>
+              <div class="app-item">
+                <span class="app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#12B0A0" stroke-width="1.6"><rect x="3" y="4" width="18" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><rect x="7" y="8" width="4" height="4" rx="0.5" fill="#12B0A0" stroke="none"/></svg></span>
+                <span class="app-name">VM Instance</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="info-buttons">
+            <button class="btn btn-secondary">
+              Все пространства
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+            </button>
+            <button class="btn btn-primary">Управление пространством</button>
+          </div>
+        </section>
+
+        <!-- RIGHT: cost panel -->
+        <aside class="cost-panel">
+          <div class="cost-header">
+            <span class="info-icon" data-tooltip="cost-tip">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="currentColor"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+              <span id="cost-tip" class="tooltip top">
+                <strong>Оплата по фактическому потреблению.</strong>
+                Стоимость рассчитывается по реальному объёму ресурсов, занятых вашими нагрузками.
+                <br><br>
+                <a href="https://s5-oblakoteka.teamly.ru/at/33ceed60-9edc-41ed-98ab-8bf9ec55018e" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); window.open(this.href, '_blank', 'noopener,noreferrer');">Как рассчитывается стоимость →</a>
+              </span>
+            </span>
+            <h3 class="cost-title">Текущая стоимость</h3>
+          </div>
+
+          <div class="cost-table" id="cost-table">
+            <div class="cost-row">
+              <span class="cost-label">Название</span>
+              <span class="cost-value">k8s-campaign</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">Регион</span>
+              <span class="cost-value">Kazakhstan, Almaty 2</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">CPU</span>
+              <span class="cost-value"><span data-price="109200">109 200</span> ₸</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">CPU гарант.</span>
+              <span class="cost-value"><span data-price="45360">45 360</span> ₸</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">RAM</span>
+              <span class="cost-value"><span data-price="76590">76 590</span> ₸</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">Хранилище</span>
+              <span class="cost-value"><span data-price="10240">10 240</span> ₸</span>
+            </div>
+            <div class="cost-row">
+              <span class="cost-label">Внешний IP</span>
+              <span class="cost-value"><span data-price="1500">1 500</span> ₸</span>
+            </div>
+            <div class="cost-row total">
+              <span class="cost-label">Стоимость</span>
+              <span class="cost-value"><span data-price="242890">242 890,00</span> ₸</span>
+            </div>
+          </div>
+
+          <div class="period-tabs" id="period-tabs">
+            <div class="period-tab" data-period="year">Год</div>
+            <div class="period-tab active" data-period="month">Месяц</div>
+            <div class="period-tab" data-period="day">Сутки</div>
+            <div class="period-tab" data-period="hour">Час</div>
+          </div>
+
+          <div class="cost-link-row">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="#71717A" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="#71717A"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="#71717A"/></svg>
+            <a href="https://s5-oblakoteka.teamly.ru/at/33ceed60-9edc-41ed-98ab-8bf9ec55018e" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); window.open(this.href, '_blank', 'noopener,noreferrer');">Как рассчитывается стоимость</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="demo-hint" id="demo-hint">
+  <b>Демо-макет PayG.</b> Дашборд пространства. Меняйте <b>период</b> — стоимость пересчитается. Наведите на <b>ⓘ</b>.
+  <span class="demo-hint-close" onclick="document.getElementById('demo-hint').style.display='none'">✕</span>
+</div>
+
+<script>
+  const PERIOD_FACTORS = { year: 12, month: 1, day: 1/30, hour: 1/720 };
+  let currentPeriod = 'month';
+
+  function formatPrice(value, withDecimals) {
+    let formatted;
+    if (withDecimals) formatted = value.toFixed(2);
+    else if (value < 10) formatted = value.toFixed(2);
+    else if (value < 100) formatted = value.toFixed(1);
+    else formatted = Math.round(value).toString();
+    const [int, dec] = formatted.split('.');
+    const intWithSep = int.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+    return dec ? `${intWithSep},${dec}` : intWithSep;
+  }
+
+  function recalcPrices() {
+    const factor = PERIOD_FACTORS[currentPeriod];
+    document.querySelectorAll('[data-price]').forEach(el => {
+      const base = parseFloat(el.getAttribute('data-price'));
+      const isTotal = el.closest('.total') !== null;
+      el.textContent = formatPrice(base * factor, isTotal);
+    });
+  }
+
+  document.querySelectorAll('.period-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentPeriod = tab.getAttribute('data-period');
+      recalcPrices();
+    });
+  });
+
+  function copyText(text) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+  }
+
+  document.querySelectorAll('[data-tooltip]').forEach(anchor => {
+    const tooltip = document.getElementById(anchor.getAttribute('data-tooltip'));
+    if (!tooltip) return;
+    let hideTimer;
+    const show = () => { clearTimeout(hideTimer); tooltip.classList.add('show'); };
+    const hide = () => { hideTimer = setTimeout(() => tooltip.classList.remove('show'), 100); };
+    anchor.addEventListener('mouseenter', show);
+    anchor.addEventListener('mouseleave', hide);
+    tooltip.addEventListener('mouseenter', show);
+    tooltip.addEventListener('mouseleave', hide);
+  });
+
+  recalcPrices();
+</script>
+
+</body>
+</html>
