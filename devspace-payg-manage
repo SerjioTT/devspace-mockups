@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DevSpace — Управление пространством (PayG)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --accent: #12B0A0;
+    --accent-hover: #0E9484;
+    --accent-pressed: #0B7F72;
+    --accent-soft: #E6F6F4;
+    --text: #3F3F46;
+    --text-secondary: #71717A;
+    --border: #D0D1D3;
+    --line: #E4E4E7;
+    --bg-alt: #F7F9FB;
+    --white: #FFFFFF;
+    --dark: #152949;
+    --bg-app: #FAFAFA;
+    --success: #58CB24;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font); background: var(--bg-app); color: var(--text);
+    font-size: 12px; line-height: 20px;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  }
+  .app { display: grid; grid-template-columns: 238px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { background: #FFF; border-right: 1px solid var(--line); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .brand { font-weight: 500; font-size: 15px; padding: 4px 12px 16px; display: flex; align-items: center; gap: 8px; }
+  .brand-dot { width: 24px; height: 24px; background: var(--accent); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; }
+  .nav-item { padding: 8px 12px; display: flex; align-items: center; gap: 10px; color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .nav-item:hover { background: var(--bg-alt); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-pressed); }
+  .nav-section-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 12px 8px; }
+
+  /* Header */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .header { height: 48px; background: #FFF; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+  .header-title { font-size: 12px; color: var(--text-secondary); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-alt); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #12B0A0, #0E9484); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+
+  /* Content */
+  .content { padding: 24px; width: 100%; }
+  .breadcrumbs { color: var(--text-secondary); font-size: 12px; line-height: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+  .breadcrumbs a { color: var(--text-secondary); text-decoration: none; }
+  .breadcrumbs a:hover { color: var(--text); }
+  .breadcrumbs .sep { color: var(--border); }
+  .breadcrumbs .current { color: var(--text); }
+
+  .layout { display: flex; }
+
+  /* ---------- Left: management form ---------- */
+  .manage { width: 512px; flex-shrink: 0; display: flex; flex-direction: column; }
+  .h1 { font-weight: 500; font-size: 26px; line-height: 34px; margin: 0; padding-bottom: 16px; color: var(--text); }
+
+  .table-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .table-label { width: 156px; padding-right: 16px; flex-shrink: 0; font-size: 12px; color: var(--text); }
+  .table-value { flex: 1; padding: 0 16px; font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .table-value.multiline { line-height: 20px; }
+  .table-edit { width: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; flex-shrink: 0; }
+  .table-edit:hover { color: var(--accent); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+
+  /* ---------- Limits section ---------- */
+  .limits-header { display: flex; align-items: center; gap: 8px; padding: 20px 0 4px; }
+  .limits-title { font-size: 16px; line-height: 24px; font-weight: 500; margin: 0; color: var(--text); }
+
+  .slider-block { display: flex; flex-direction: column; padding: 8px 0; }
+  .slider-label { font-size: 12px; line-height: 20px; color: var(--text); margin-bottom: 2px; font-weight: 500; }
+  .slider-row { display: flex; gap: 32px; align-items: flex-start; }
+  .slider-track-wrap { flex: 1; min-width: 0; padding-top: 4px; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill, 50%), var(--line) var(--fill, 50%), var(--line) 100%);
+    border-radius: 2px; outline: none; margin: 4px 0 0; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+    cursor: pointer; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .slider-minmax { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--text-secondary); margin-top: 4px; }
+
+  .slider-value { display: flex; align-items: center; gap: 8px; width: 131px; flex-shrink: 0; }
+  .slider-input {
+    width: 78px; height: 36px; padding: 8px 16px; border: 1px solid var(--line);
+    background: var(--white); font-family: inherit; font-size: 12px; line-height: 20px;
+    color: var(--text); text-align: left;
+  }
+  .slider-input:focus { outline: none; border-color: var(--accent); }
+  .slider-unit { font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+
+  /* Buttons */
+  .actions { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; margin-top: 16px; border-top: 1px solid var(--line); }
+  .btn {
+    height: 36px; width: 175px; border-radius: 24px; font-family: inherit;
+    font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .btn-secondary { background: var(--white); color: var(--text); border-color: var(--line); }
+  .btn-secondary:hover { background: var(--bg-alt); }
+  .btn-apply { background: var(--bg-alt); color: var(--border); cursor: not-allowed; }
+  .btn-apply.enabled { background: var(--accent); color: var(--white); cursor: pointer; }
+  .btn-apply.enabled:hover { background: var(--accent-hover); }
+
+  /* ---------- Budget block (итог под слайдерами) ---------- */
+  .budget-block {
+    background: var(--bg-alt);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .budget-block-header { display: flex; align-items: center; gap: 8px; }
+  .budget-block-title { font-size: 12px; line-height: 20px; color: var(--text); font-weight: 500; }
+  .budget-block-sum {
+    font-size: 26px; line-height: 34px; font-weight: 500; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .budget-block-sum .unit { font-size: 16px; font-weight: 400; color: var(--text-secondary); }
+  .budget-link-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .budget-link-row a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; font-size: 12px; cursor: pointer; }
+  .budget-link-row a:hover { color: var(--accent); }
+
+  /* Info icon + tooltip */
+  .info-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: help; position: relative; flex-shrink: 0; }
+  .info-icon:hover { color: var(--accent); }
+  .tooltip {
+    position: absolute; z-index: 30; background: var(--dark); color: #F9FAFB;
+    padding: 10px 12px; border-radius: 6px; font-size: 12px; line-height: 16px;
+    width: 240px; box-shadow: 0 12px 24px rgba(16,24,40,0.15);
+    opacity: 0; visibility: hidden; transition: opacity 0.15s, transform 0.15s; font-weight: 400;
+  }
+  .tooltip.show { opacity: 1; visibility: visible; }
+  .tooltip.top { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(-4px); }
+  .tooltip.top.show { transform: translateX(-50%) translateY(0); }
+  .tooltip.top::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--dark); }
+  .tooltip strong { color: #fff; }
+  .tooltip.narrow { width: 160px; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .layout { flex-direction: column; }
+  }
+  @media (max-width: 720px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .content { padding: 16px; }
+    .manage { width: 100%; }
+  }
+
+  .demo-hint {
+    position: fixed; bottom: 16px; right: 16px; background: var(--dark); color: #F9FAFB;
+    padding: 10px 14px; border-radius: 6px; font-size: 12px; line-height: 16px;
+    box-shadow: 0 12px 24px rgba(16,24,40,0.15); max-width: 280px; z-index: 100;
+  }
+  .demo-hint b { color: #6CE9DA; }
+  .demo-hint-close { display: inline-block; margin-left: 8px; cursor: pointer; color: #98A2B3; }
+  .demo-hint-close:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-dot">D</span>DevSpace</div>
+    <div class="nav-section-label">Мои сервисы</div>
+    <div class="nav-item active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      DevSpace
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14a9 3 0 0 0 18 0V5"></path><path d="M3 12a9 3 0 0 0 18 0"></path></svg>
+      Базы данных
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+      Хранилище S3
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+      Kubernetes
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+      Почта
+    </div>
+    <div class="nav-section-label">Аккаунт</div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+      Биллинг
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      Настройки
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-title">Пространство «smtest077»</div>
+      <div class="header-right">
+        <div class="header-icon" title="Уведомления">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </div>
+        <div class="avatar">СМ</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <nav class="breadcrumbs">
+        <a href="#">Все сервисы</a>
+        <span class="sep">/</span>
+        <a href="#">…</a>
+        <span class="sep">/</span>
+        <a href="#">smtest077</a>
+        <span class="sep">/</span>
+        <span class="current">Управление пространством</span>
+      </nav>
+
+      <div class="layout">
+        <!-- LEFT -->
+        <section class="manage">
+          <h1 class="h1">Управление пространством</h1>
+
+          <div class="table-row">
+            <div class="table-label">Название</div>
+            <div class="table-value">smtest077</div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Статус</div>
+            <div class="table-value"><span class="status-dot"></span>ONLINE</div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Описание</div>
+            <div class="table-value multiline">не удалять. для тестирования вендором</div>
+            <div class="table-edit" title="Редактировать">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Регион</div>
+            <div class="table-value">Kazakhstan, Almaty 2</div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Email</div>
+            <div class="table-value">demo@aenix.io</div>
+            <div class="table-edit" title="Редактировать">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Пароль</div>
+            <div class="table-value">••••••••</div>
+            <div class="table-edit" title="Редактировать">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+          </div>
+
+          <div class="table-row">
+            <div class="table-label">Группа услуг</div>
+            <div class="table-value">ввв</div>
+            <div class="table-edit" title="Редактировать">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+          </div>
+
+          <!-- Лимиты ресурсов -->
+          <div class="limits-header">
+            <h2 class="limits-title">Лимиты ресурсов</h2>
+            <span class="info-icon" data-tooltip="limits-tip">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="currentColor"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+              <span id="limits-tip" class="tooltip top">Ваши нагрузки технически не смогут занять ресурсов больше, чем указано здесь. Оплата — только за ресурсы, которые фактически потребляют ваши сервисы.</span>
+            </span>
+          </div>
+
+          <!-- CPU -->
+          <div class="slider-block">
+            <div class="slider-label">CPU</div>
+            <div class="slider-row">
+              <div class="slider-track-wrap">
+                <input type="range" id="cpu-range" min="24" max="240" value="64" step="1" />
+                <div class="slider-minmax"><span>24</span><span>240</span></div>
+              </div>
+              <div class="slider-value">
+                <input class="slider-input" type="number" id="cpu-input" min="24" max="240" value="64" />
+                <span class="slider-unit">
+                  CPU
+                  <span class="info-icon" data-tooltip="cpu-guar-tip">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="currentColor"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+                    <span id="cpu-guar-tip" class="tooltip top narrow">до <span id="cpu-guar-value">6,4</span> vCPU гарант.</span>
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RAM -->
+          <div class="slider-block">
+            <div class="slider-label">RAM</div>
+            <div class="slider-row">
+              <div class="slider-track-wrap">
+                <input type="range" id="ram-range" min="24" max="128" value="64" step="1" />
+                <div class="slider-minmax"><span>24</span><span>128</span></div>
+              </div>
+              <div class="slider-value">
+                <input class="slider-input" type="number" id="ram-input" min="24" max="128" value="64" />
+                <span class="slider-unit">ГБ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Хранилище -->
+          <div class="slider-block">
+            <div class="slider-label">Размер хранилища</div>
+            <div class="slider-row">
+              <div class="slider-track-wrap">
+                <input type="range" id="storage-range" min="50" max="256" value="150" step="1" />
+                <div class="slider-minmax"><span>50</span><span>256</span></div>
+              </div>
+              <div class="slider-value">
+                <input class="slider-input" type="number" id="storage-input" min="50" max="256" value="150" />
+                <span class="slider-unit">ГБ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Внешний IP -->
+          <div class="slider-block">
+            <div class="slider-label">Внешний IP</div>
+            <div class="slider-row">
+              <div class="slider-track-wrap">
+                <input type="range" id="ip-range" min="1" max="5" value="4" step="1" />
+                <div class="slider-minmax"><span>1</span><span>5</span></div>
+              </div>
+              <div class="slider-value">
+                <input class="slider-input" type="number" id="ip-input" min="1" max="5" value="4" />
+                <span class="slider-unit">IP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ограничение бюджета (итог настроек) -->
+          <div class="budget-block">
+            <div class="budget-block-header">
+              <span class="budget-block-title">Ограничение бюджета</span>
+              <span class="info-icon" data-tooltip="budget-tip">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="currentColor"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="currentColor"/></svg>
+                <span id="budget-tip" class="tooltip top">Максимальная сумма, которую могут стоить ресурсы вашего пространства. Работает как страховка: нагрузки технически не смогут занять ресурсов больше, чем на установленную сумму.</span>
+              </span>
+            </div>
+            <div class="budget-block-sum">до <span id="budget-total">358 456</span> <span class="unit">₸ в месяц</span></div>
+            <div class="budget-link-row">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="#71717A" stroke-width="1.5"/><circle cx="10" cy="6.75" r="0.9" fill="#71717A"/><rect x="9.25" y="9" width="1.5" height="5" rx="0.75" fill="#71717A"/></svg>
+              <a href="https://s5-oblakoteka.teamly.ru/at/33ceed60-9edc-41ed-98ab-8bf9ec55018e" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); window.open(this.href, '_blank', 'noopener,noreferrer');">Как рассчитывается стоимость</a>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-secondary" onclick="resetAll()">Отмена</button>
+            <button class="btn btn-apply" id="apply-btn" disabled>Применить</button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="demo-hint" id="demo-hint">
+  <b>Демо-макет PayG.</b> Управление пространством: двигайте <b>слайдеры</b> — бюджет пересчитается. Наведите на <b>ⓘ</b> у CPU.
+  <span class="demo-hint-close" onclick="document.getElementById('demo-hint').style.display='none'">✕</span>
+</div>
+
+<script>
+  // ===== Pricing model (per month, no discount) =====
+  const PRICE = { guar: 14190, pool: 2400, ram: 1100, storage: 300, ip: 3500 };
+  const GUAR_RATIO = 10;   // CPU limit / 10 = guaranteed vCPU
+
+  const DEFAULTS = { cpu: 64, ram: 64, storage: 150, ip: 4 };
+
+  const els = {
+    cpu:    { range: document.getElementById('cpu-range'),    input: document.getElementById('cpu-input') },
+    ram:    { range: document.getElementById('ram-range'),    input: document.getElementById('ram-input') },
+    storage:{ range: document.getElementById('storage-range'),input: document.getElementById('storage-input') },
+    ip:     { range: document.getElementById('ip-range'),     input: document.getElementById('ip-input') },
+  };
+
+  function fmtInt(v) {
+    return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+  }
+  function fmtSmart(v) {
+    let f;
+    if (v < 10) f = v.toFixed(2);
+    else if (v < 100) f = v.toFixed(1);
+    else f = Math.round(v).toString();
+    const [i, d] = f.split('.');
+    const ii = i.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+    return d ? ii + ',' + d : ii;
+  }
+  function fmtQty(v) {
+    // up to 1 decimal, comma
+    const f = (Math.round(v * 10) / 10).toString();
+    return f.replace('.', ',');
+  }
+
+  function getVals() {
+    return {
+      cpu: parseInt(els.cpu.input.value) || 0,
+      ram: parseInt(els.ram.input.value) || 0,
+      storage: parseInt(els.storage.input.value) || 0,
+      ip: parseInt(els.ip.input.value) || 0,
+    };
+  }
+
+  function updateFill(range) {
+    const min = parseFloat(range.min), max = parseFloat(range.max), val = parseFloat(range.value);
+    const pct = ((val - min) / (max - min)) * 100;
+    range.style.setProperty('--fill', pct + '%');
+  }
+
+  function recalc() {
+    const v = getVals();
+    const guar = v.cpu / GUAR_RATIO;
+    const pool = v.cpu - guar;
+    const f = 1; // месяц — единственный период лимита
+
+    const sumPool = pool * PRICE.pool * f;
+    const sumGuar = guar * PRICE.guar * f;
+    const sumRam = v.ram * PRICE.ram * f;
+    const sumStorage = v.storage * PRICE.storage * f;
+    const sumIp = v.ip * PRICE.ip * f;
+    const total = sumPool + sumGuar + sumRam + sumStorage + sumIp;
+
+    document.getElementById('budget-total').textContent = fmtSmart(total);
+    document.getElementById('cpu-guar-value').textContent = fmtQty(guar);
+
+    // Enable/disable apply button
+    const changed = v.cpu !== DEFAULTS.cpu || v.ram !== DEFAULTS.ram || v.storage !== DEFAULTS.storage || v.ip !== DEFAULTS.ip;
+    const btn = document.getElementById('apply-btn');
+    btn.classList.toggle('enabled', changed);
+    btn.disabled = !changed;
+  }
+
+  // Bind sliders <-> inputs
+  Object.values(els).forEach(({ range, input }) => {
+    updateFill(range);
+    range.addEventListener('input', () => {
+      input.value = range.value;
+      updateFill(range);
+      recalc();
+    });
+    input.addEventListener('input', () => {
+      let val = parseInt(input.value);
+      if (isNaN(val)) return;
+      val = Math.max(parseInt(range.min), Math.min(parseInt(range.max), val));
+      range.value = val;
+      updateFill(range);
+      recalc();
+    });
+    input.addEventListener('blur', () => {
+      let val = parseInt(input.value);
+      if (isNaN(val)) val = parseInt(range.min);
+      val = Math.max(parseInt(range.min), Math.min(parseInt(range.max), val));
+      input.value = val;
+      range.value = val;
+      updateFill(range);
+      recalc();
+    });
+  });
+
+  function resetAll() {
+    els.cpu.range.value = els.cpu.input.value = DEFAULTS.cpu;
+    els.ram.range.value = els.ram.input.value = DEFAULTS.ram;
+    els.storage.range.value = els.storage.input.value = DEFAULTS.storage;
+    els.ip.range.value = els.ip.input.value = DEFAULTS.ip;
+    Object.values(els).forEach(({ range }) => updateFill(range));
+    recalc();
+  }
+
+  // Tooltips
+  document.querySelectorAll('[data-tooltip]').forEach(anchor => {
+    const tooltip = document.getElementById(anchor.getAttribute('data-tooltip'));
+    if (!tooltip) return;
+    let hideTimer;
+    const show = () => { clearTimeout(hideTimer); tooltip.classList.add('show'); };
+    const hide = () => { hideTimer = setTimeout(() => tooltip.classList.remove('show'), 100); };
+    anchor.addEventListener('mouseenter', show);
+    anchor.addEventListener('mouseleave', hide);
+    tooltip.addEventListener('mouseenter', show);
+    tooltip.addEventListener('mouseleave', hide);
+  });
+
+  recalc();
+</script>
+
+</body>
+</html>
