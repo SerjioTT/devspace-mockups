@@ -82,7 +82,12 @@
   .slider-track-wrap { flex: 1; min-width: 0; padding-top: 4px; }
   input[type="range"] {
     -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
-    background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill, 50%), var(--line) var(--fill, 50%), var(--line) 100%);
+    /* Слои (сверху вниз): потребление (тёмный) | буфер +50% (штрих) | заливка до значения | база */
+    background:
+      linear-gradient(var(--dark), var(--dark)) 0 0 / var(--cons, 0%) 100% no-repeat,
+      repeating-linear-gradient(135deg, rgba(21,41,73,0.55) 0 2px, rgba(21,41,73,0.12) 2px 5px) 0 0 / var(--floor, 0%) 100% no-repeat,
+      linear-gradient(var(--accent), var(--accent)) 0 0 / var(--fill, 0%) 100% no-repeat,
+      var(--line);
     border-radius: 2px; outline: none; margin: 4px 0 0; cursor: pointer;
   }
   input[type="range"]::-webkit-slider-thumb {
@@ -95,6 +100,10 @@
     cursor: pointer; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
   .slider-minmax { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--text-secondary); margin-top: 4px; }
+  .limit-hint {
+    color: var(--accent-pressed); opacity: 0; transition: opacity 0.2s; white-space: nowrap;
+  }
+  .limit-hint.show { opacity: 1; }
 
   .slider-value { display: flex; align-items: center; gap: 8px; width: 131px; flex-shrink: 0; }
   .slider-input {
@@ -302,8 +311,8 @@
             <div class="slider-label">vCPU</div>
             <div class="slider-row">
               <div class="slider-track-wrap">
-                <input type="range" id="cpu-range" min="24" max="240" value="64" step="1" />
-                <div class="slider-minmax"><span>24</span><span>240</span></div>
+                <input type="range" id="cpu-range" min="24" max="240" value="64" step="1" data-consumption="28" />
+                <div class="slider-minmax"><span>24</span><span class="limit-hint" id="cpu-hint"></span><span>240</span></div>
               </div>
               <div class="slider-value">
                 <input class="slider-input" type="number" id="cpu-input" min="24" max="240" value="64" />
@@ -323,8 +332,8 @@
             <div class="slider-label">RAM</div>
             <div class="slider-row">
               <div class="slider-track-wrap">
-                <input type="range" id="ram-range" min="24" max="128" value="64" step="1" />
-                <div class="slider-minmax"><span>24</span><span>128</span></div>
+                <input type="range" id="ram-range" min="24" max="128" value="64" step="1" data-consumption="30" />
+                <div class="slider-minmax"><span>24</span><span class="limit-hint" id="ram-hint"></span><span>128</span></div>
               </div>
               <div class="slider-value">
                 <input class="slider-input" type="number" id="ram-input" min="24" max="128" value="64" />
@@ -338,8 +347,8 @@
             <div class="slider-label">Размер хранилища</div>
             <div class="slider-row">
               <div class="slider-track-wrap">
-                <input type="range" id="storage-range" min="50" max="256" value="150" step="1" />
-                <div class="slider-minmax"><span>50</span><span>256</span></div>
+                <input type="range" id="storage-range" min="50" max="256" value="150" step="1" data-consumption="80" />
+                <div class="slider-minmax"><span>50</span><span class="limit-hint" id="storage-hint"></span><span>256</span></div>
               </div>
               <div class="slider-value">
                 <input class="slider-input" type="number" id="storage-input" min="50" max="256" value="150" />
@@ -353,8 +362,8 @@
             <div class="slider-label">Внешний IP</div>
             <div class="slider-row">
               <div class="slider-track-wrap">
-                <input type="range" id="ip-range" min="1" max="5" value="4" step="1" />
-                <div class="slider-minmax"><span>1</span><span>5</span></div>
+                <input type="range" id="ip-range" min="1" max="5" value="4" step="1" data-consumption="2" />
+                <div class="slider-minmax"><span>1</span><span class="limit-hint" id="ip-hint"></span><span>5</span></div>
               </div>
               <div class="slider-value">
                 <input class="slider-input" type="number" id="ip-input" min="1" max="5" value="4" />
@@ -436,10 +445,39 @@
     };
   }
 
+  function pctOf(range, v) {
+    const min = parseFloat(range.min), max = parseFloat(range.max);
+    return ((v - min) / (max - min)) * 100;
+  }
+  function floorOf(range) {
+    const cons = parseFloat(range.dataset.consumption || 0);
+    return Math.ceil(cons * 1.5); // не ниже потребления +50%
+  }
   function updateFill(range) {
-    const min = parseFloat(range.min), max = parseFloat(range.max), val = parseFloat(range.value);
-    const pct = ((val - min) / (max - min)) * 100;
-    range.style.setProperty('--fill', pct + '%');
+    const val = parseFloat(range.value);
+    range.style.setProperty('--fill', pctOf(range, val) + '%');
+    const cons = parseFloat(range.dataset.consumption || 0);
+    if (cons > 0) {
+      range.style.setProperty('--cons', Math.max(0, pctOf(range, cons)) + '%');
+      range.style.setProperty('--floor', Math.max(0, pctOf(range, floorOf(range))) + '%');
+    }
+  }
+  const hintTimers = {};
+  function showFloorHint(key, consVal) {
+    const el = document.getElementById(key + '-hint');
+    if (!el) return;
+    el.textContent = 'лимит не ниже потребления (сейчас ' + consVal + ') +50%';
+    el.classList.add('show');
+    clearTimeout(hintTimers[key]);
+    hintTimers[key] = setTimeout(() => el.classList.remove('show'), 2400);
+  }
+  function clampToFloor(key, range, proposed) {
+    const fl = floorOf(range);
+    if (proposed < fl) {
+      showFloorHint(key, parseFloat(range.dataset.consumption || 0));
+      return fl;
+    }
+    return proposed;
   }
 
   function recalc() {
@@ -466,10 +504,12 @@
   }
 
   // Bind sliders <-> inputs
-  Object.values(els).forEach(({ range, input }) => {
+  Object.entries(els).forEach(([key, { range, input }]) => {
     updateFill(range);
     range.addEventListener('input', () => {
-      input.value = range.value;
+      let val = clampToFloor(key, range, parseInt(range.value));
+      range.value = val;
+      input.value = val;
       updateFill(range);
       recalc();
     });
@@ -477,6 +517,7 @@
       let val = parseInt(input.value);
       if (isNaN(val)) return;
       val = Math.max(parseInt(range.min), Math.min(parseInt(range.max), val));
+      val = clampToFloor(key, range, val);
       range.value = val;
       updateFill(range);
       recalc();
@@ -485,6 +526,7 @@
       let val = parseInt(input.value);
       if (isNaN(val)) val = parseInt(range.min);
       val = Math.max(parseInt(range.min), Math.min(parseInt(range.max), val));
+      val = clampToFloor(key, range, val);
       input.value = val;
       range.value = val;
       updateFill(range);
